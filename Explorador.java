@@ -1,29 +1,56 @@
 /**
- * Classe abstrata que representa um explorador na Caça ao Tesouro Paralela.
- * Define a estrutura básica para diferentes tipos de exploradores.
+ * Define os dados e comportamentos comuns a todos os exploradores.
  */
 public abstract class Explorador {
-    
-    // * Construtor que inicializa todos os atributos do explorador.
-    
 
+    // Os atributos privados garantem o encapsulamento dos dados.
+    private String nome;
+    private String tipo;
+    private int prioridade;
+    private String tarefa;
 
     /**
-     * Método abstrato que deve ser implementado pelas subclasses.
-     * Define como cada tipo de explorador executa sua tarefa.
-     * @throws TarefaInvalidaException Se a tarefa for inválida
+     * Inicializa todos os dados de um explorador.
+     */
+    public Explorador(String nome, String tipo, int prioridade, String tarefa) {
+        this.nome = nome;
+        this.tipo = tipo;
+        this.prioridade = prioridade;
+        this.tarefa = tarefa;
+    }
+
+    /**
+     * Obriga cada subclasse a definir sua própria forma de explorar.
+     *
+     * @throws TarefaInvalidaException quando a tarefa não puder ser executada
      */
     public abstract void executarTarefa() throws TarefaInvalidaException;
-    
+
     /**
-     * Exibe o status completo do explorador com formatação clara.
+     * Exibe os dados e o status inicial do explorador.
      */
     public void exibirStatus() {
-
+        System.out.println("Explorador: " + nome);
+        System.out.println("Tipo: " + tipo);
+        System.out.println("Prioridade: " + prioridade);
+        System.out.println("Tarefa: " + tarefa);
+        System.out.println("Status: Iniciando exploração...");
     }
-    
-    // Getters para acesso aos atributos encapsulados
 
+    // Os getters permitem a leitura sem expor diretamente os atributos.
+    public String getNome() {
+        return nome;
+    }
 
+    public String getTipo() {
+        return tipo;
+    }
+
+    public int getPrioridade() {
+        return prioridade;
+    }
+
+    public String getTarefa() {
+        return tarefa;
+    }
 }
-

@@ -1,27 +1,37 @@
 /**
- * Explorador rápido que executa tarefas com alta velocidade e eficiência.
- * Implementa Runnable para execução em thread separada.
+ * Explorador que realiza sua tarefa de forma rápida.
+ * Runnable permite que o objeto seja executado por uma Thread.
  */
 public class ExploradorRapido extends Explorador implements Runnable {
-    
-    // * Construtor do explorador rápido.
-    
+
     /**
-     * Implementação específica da execução de tarefa para exploradores rápidos.
-     * Exploradores rápidos executam tarefas com maior agilidade.
-     * @throws TarefaInvalidaException Se a tarefa for nula ou vazia
+     * Exploradores rápidos usam a prioridade máxima definida por Thread.
      */
+    public ExploradorRapido(String nome, String tarefa) {
+        super(nome, "Rápido", Thread.MAX_PRIORITY, tarefa);
+    }
+
     @Override
     public void executarTarefa() throws TarefaInvalidaException {
-        
+        // trim() também identifica textos compostos apenas por espaços.
+        if (getTarefa() == null || getTarefa().trim().isEmpty()) {
+            throw new TarefaInvalidaException("Tarefa inválida para " + getNome());
+        }
+
+        exibirStatus();
+        System.out.println(getNome() + " vasculhou rapidamente: " + getTarefa());
+        System.out.println();
     }
-    
+
     /**
-     * Método run() executado quando a thread é iniciada.
-     * Trata exceções e chama executarTarefa().
+     * A própria thread trata uma possível falha em sua tarefa.
      */
     @Override
     public void run() {
+        try {
+            executarTarefa();
+        } catch (TarefaInvalidaException e) {
+            System.err.println("Erro: " + e.getMessage());
+        }
     }
 }
-
