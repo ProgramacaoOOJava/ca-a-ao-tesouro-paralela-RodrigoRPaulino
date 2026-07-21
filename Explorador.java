@@ -1,73 +1,70 @@
-import java.util.concurrent.Semaphore; // implementando semaforo 
 
+import java.util.concurrent.Callable;
 /**
- * Define os dados e comportamentos comuns a todos os exploradores.
+ * Representa a estrutura comum dos exploradores do nível Mestre.
  */
-public abstract class Explorador {
+public abstract class Explorador implements Callable<Double>{
 
-    // Os atributos privados garantem o encapsulamento dos dados.
+    // Dados encapsulados do explorador.
     private String nome;
     private String especialidade;
     private int nivel;
-    private int prioridade;
-    private Tarefa tarefa;
-
-    //todos os exploradores receberao o mesmo semaforo:
-    private Semaphore semaforo;
+    private int energia;
+    private Missao tarefa;
 
     /**
-     * Inicializa todos os dados de um explorador.
+     * Inicializa todos os atributos do explorador.
      */
-    public Explorador
-    (
-        String nome, String especialidade, 
-        int nivel, int prioridade,
-        Tarefa tarefa,Semaphore semaforo
-    ) 
-    {
+    public Explorador(
+            String nome,
+            String especialidade,
+            int nivel,
+            int energia,
+            Missao tarefa
+    ) {
         this.nome = nome;
         this.especialidade = especialidade;
         this.nivel = nivel;
-        this.prioridade = prioridade;
+        this.energia = energia;
         this.tarefa = tarefa;
-        this.semaforo = semaforo;
     }
 
     /**
-     * Obriga cada subclasse a definir sua própria forma de explorar.
+     * Cada subclasse implementará uma fórmula diferente de pontuação.
      *
-     * @throws TarefaInvalidaException quando a tarefa não puder ser executada
+     * @return quantidade de pontos obtidos na missão
      */
-    public abstract void executarTarefa() throws TarefaInvalidaException;
+    public abstract Double executarMissao();
 
     /**
-     * Exibe os dados e o status inicial do explorador.
+     * Exibe todos os dados do explorador e da missão.
      */
     public void exibirStatus() {
         System.out.println("Explorador: " + nome);
         System.out.println("Especialidade: " + especialidade);
-        System.out.println("Nivel: " + nivel);
-        System.out.println("Prioridade: " + prioridade);
-        System.out.println("Tarefa: " + 
-                            tarefa.getDescricao() + " em " + 
-                            tarefa.getLocal() + " Dificuldade " +
-                            tarefa.getDificuldade());
-       
+        System.out.println("Nível: " + nivel);
+        System.out.println("Energia: " + energia);
+        System.out.println("Missão: " + tarefa);
     }
 
-    // Os getters permitem a leitura sem expor diretamente os atributos.
-    public String getNome() {return nome;}
+    // Getters para acesso controlado aos atributos.
+    public String getNome() {
+        return nome;
+    }
 
-    public String getEspecialidade() {return especialidade;}
+    public String getEspecialidade() {
+        return especialidade;
+    }
 
-    public int getNivel() {return nivel;}
+    public int getNivel() {
+        return nivel;
+    }
 
-    public int getPrioridade() {return prioridade;}
+    public int getEnergia() {
+        return energia;
+    }
 
-    // implementando getters do desafio aventureiro
-    public Tarefa getTarefa(){return tarefa;}
-
-    public Semaphore getSemaforo(){return semaforo;}
-}   
-    
-
+    public Missao getTarefa() {
+        return tarefa;
+    }
+}

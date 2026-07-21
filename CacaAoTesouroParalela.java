@@ -1,131 +1,156 @@
 import java.util.ArrayList;
-import java.util.concurrent.Semaphore;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.Future;
 
 /**
- * Classe principal responsável por cadastrar os exploradores e executar
- * suas tarefas paralelamente.
- * Fluxo da aplicação como um todo :
- * O main cria um semáforo com duas permissões;
- * Os quatro exploradores começam praticamente juntos;
- * Somente dois conseguem passar pelo acquire();
- * Os demais ficam aguardando;
- * Quando um explorador chama release(), outro pode começar;
- * O main usa join() para aguardar todos;
- * As threads terminam no estado TERMINATED.
+ * Classe principal do nível Mestre da Caça ao Tesouro Paralela.
  */
-public class CacaAoTesouroParalela 
-{
+public class CacaAoTesouroParalela {
 
-    public static void main(String[] args) 
-    {
+    public static void main(String[] args) {
         System.out.println("=== CAÇA AO TESOURO PARALELA ===");
-        System.out.println(" Nivel Aventureiro \n");
+        System.out.println("Nível Mestre\n");
 
-        /**
-         * O mesmo semafor  sera compartilhado por todos os exploradores.
-         * As 2 permissoes limitam a execução a dois exploradores por vez.
-        */
-       Semaphore semaforo = new Semaphore(2);
-
-       //Criação das quatro tarefas imutaveis.
-       Tarefa tarefaCaverna = new Tarefa("Mapear caverna","Caverna do Eco",7);
-
-       Tarefa tarefaRuinas = new Tarefa("Explorar ruinas","Templo Antigo",6);
-
-       Tarefa tarefaFloresta = new Tarefa("Procurar pistas","Floresta Sombria",5);
-
-       Tarefa tarefaMontanha = new Tarefa("Recuperar Artefato","Montanha Perdida",9);
-
-       /*
-         * Todos os exploradores recebem exatamente a mesma instância
-         * do semáforo.
-         */
-        ExploradorRapido alice = new ExploradorRapido
-        ("Alice", 5, Thread.MAX_PRIORITY, tarefaCaverna, semaforo);
-
-         ExploradorRapido carlos = new ExploradorRapido
-        ("Carlos", 4, 8, tarefaRuinas, semaforo);
-
-        ExploradorCuidadoso bob = new ExploradorCuidadoso
-        ("Bob", 4, 5, tarefaFloresta, semaforo);
-
-        ExploradorCuidadoso diana = new ExploradorCuidadoso
-        ("Diana", 6, Thread.MAX_PRIORITY, tarefaMontanha, semaforo);
-
-        // Cada explorador Runnable é encapsulado em uma Thread.
-        Thread threadAlice = new Thread(alice, "Thread-Alice");
-        Thread threadCarlos = new Thread(carlos, "Thread-Carlos");
-        Thread threadBob = new Thread(bob, "Thread-Bob");
-        Thread threadDiana = new Thread(diana, "Thread-Diana");
-
-        /*
-         * A prioridade da Thread deve coincidir com a prioridade
-         * armazenada no explorador.
-         */
-        threadAlice.setPriority(alice.getPrioridade());
-        threadCarlos.setPriority(carlos.getPrioridade());
-        threadBob.setPriority(bob.getPrioridade());
-        threadDiana.setPriority(diana.getPrioridade());
-
-        //Diana vai ser uma tarefa secundaria
-        threadDiana.setDaemon(true);
-
-        //Lista usada para gerenciar todas as threads.
-        ArrayList<Thread> threads = new ArrayList<>();
-
-        threads.add(threadAlice);
-        threads.add(threadCarlos);
-        threads.add(threadBob);
-        threads.add(threadDiana);
-
-        System.out.println("=== THREADS ANTES DO START ===");
-
-        //Inicia a execução paralela das tarefas
-        for(Thread thread : threads)
-        {
-            thread.start();
-        }
-        /*
-         * Aguarda a conclusão das threads.
-         * Mesmo sendo daemon, Diana também será aguardada para que sua
-         * execução possa ser analisada completamente neste exercício.
-         */
-        for (Thread thread : threads) 
-        {
-            try 
-            {
-                thread.join();
-            } 
-            catch (InterruptedException e) 
-            {
-                System.err.println("A thread principal foi interrompida.");
-                Thread.currentThread().interrupt();
-                return;
-            }
-        }
-        System.out.println("=== ESTADO FINAL DAS THREADS ===");
-
-        for(Thread thread : threads)
-        {
-            exibirInformacoes(thread);
-        }
-
-        System.out.println("\n=== EXPLORAÇÃO FINALIZADA ===");
-        System.out.println("Todos os exploradores concluíram suas tarefas.");
-    }
-    /**
-     * Exibe as principais informações de uma thread.
-     */
-    private static void exibirInformacoes(Thread thread) 
-    {
-        System.out.println(
-                thread.getName()
-                        + " | Prioridade: "
-                        + thread.getPriority()
-                        + " | Daemon: "
-                        + thread.isDaemon()
-                        + " | Estado: "
-                        + thread.getState()
+        // Criação das missões imutáveis.
+        Missao missaoCaverna = new Missao(
+                "Mapear cavernas",
+                "Caverna do Eco",
+                7
         );
+
+        Missao missaoArtefato = new Missao(
+                "Recuperar artefatos",
+                "Templo Antigo",
+                8
+        );
+
+        Missao missaoTrilhas = new Missao(
+                "Encontrar trilhas secretas",
+                "Floresta Sombria",
+                5
+        );
+
+        Missao missaoTesouro = new Missao(
+                "Resgatar o tesouro perdido",
+                "Ruínas Submersas",
+                9
+        );
+
+        // O polimorfismo permite armazenar subclasses como Explorador.
+        ArrayList<Explorador> exploradores = new ArrayList<>();
+
+        exploradores.add(
+                new Rastreador(
+                        "Lina",
+                        5,
+                        80,
+                        missaoCaverna
+                )
+        );
+
+        exploradores.add(
+                new Saqueador(
+                        "Drogan",
+                        6,
+                        90,
+                        missaoArtefato
+                )
+        );
+
+        exploradores.add(
+                new Rastreador(
+                        "Aria",
+                        4,
+                        75,
+                        missaoTrilhas
+                )
+        );
+
+        exploradores.add(
+                new Saqueador(
+                        "Kael",
+                        7,
+                        85,
+                        missaoTesouro
+                )
+        );
+
+        /*
+         * O pool possui duas threads, portanto somente duas missões
+         * poderão ser processadas simultaneamente.
+         */
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+
+        // Cada Future armazenará os pontos retornados por um explorador.
+        ArrayList<Future<Double>> resultados = new ArrayList<>();
+
+        System.out.println("=== ENVIANDO MISSÕES ===");
+
+        for (Explorador explorador : exploradores) {
+            Future<Double> resultado = executor.submit(explorador);
+            resultados.add(resultado);
+        }
+
+        // O array será posteriormente processado pelo Fork/Join.
+        double[] pontos = new double[exploradores.size()];
+
+        try {
+            System.out.println("\n=== COLETANDO RESULTADOS ===");
+
+            for (int indice = 0; indice < resultados.size(); indice++) {
+                /*
+                 * get() aguarda a conclusão da missão correspondente
+                 * e recupera o Double retornado pelo Callable.
+                 */
+                pontos[indice] = resultados.get(indice).get();
+
+                Explorador explorador = exploradores.get(indice);
+
+                System.out.println(
+                        "Resultado de "
+                                + explorador.getNome()
+                                + ": "
+                                + pontos[indice]
+                                + " pontos."
+                );
+            }
+        } catch (InterruptedException e) {
+            System.err.println(
+                    "A thread principal foi interrompida."
+            );
+
+            Thread.currentThread().interrupt();
+            return;
+        } catch (ExecutionException e) {
+            System.err.println(
+                    "Falha durante uma missão: "
+                            + e.getCause().getMessage()
+            );
+
+            return;
+        } finally {
+            // Impede o recebimento de novas tarefas.
+            executor.shutdown();
+        }
+
+        System.out.println("\n=== SOMANDO PONTOS COM FORK/JOIN ===");
+
+        ForkJoinPool forkJoinPool = new ForkJoinPool();
+
+        try {
+            SomaPontos tarefaSoma = new SomaPontos(pontos);
+
+            // invoke() inicia a tarefa e aguarda o resultado.
+            double total = forkJoinPool.invoke(tarefaSoma);
+
+            System.out.println("Soma total dos pontos: " + total);
+        } finally {
+            forkJoinPool.shutdown();
+        }
+
+        System.out.println("\n=== MISSÕES FINALIZADAS ===");
     }
 }
