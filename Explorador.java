@@ -1,3 +1,5 @@
+import java.util.concurrent.Semaphore; // implementando semaforo 
+
 /**
  * Define os dados e comportamentos comuns a todos os exploradores.
  */
@@ -5,18 +7,30 @@ public abstract class Explorador {
 
     // Os atributos privados garantem o encapsulamento dos dados.
     private String nome;
-    private String tipo;
+    private String especialidade;
+    private int nivel;
     private int prioridade;
-    private String tarefa;
+    private Tarefa tarefa;
+
+    //todos os exploradores receberao o mesmo semaforo:
+    private Semaphore semaforo;
 
     /**
      * Inicializa todos os dados de um explorador.
      */
-    public Explorador(String nome, String tipo, int prioridade, String tarefa) {
+    public Explorador
+    (
+        String nome, String especialidade, 
+        int nivel, int prioridade,
+        Tarefa tarefa,Semaphore semaforo
+    ) 
+    {
         this.nome = nome;
-        this.tipo = tipo;
+        this.especialidade = especialidade;
+        this.nivel = nivel;
         this.prioridade = prioridade;
         this.tarefa = tarefa;
+        this.semaforo = semaforo;
     }
 
     /**
@@ -31,26 +45,29 @@ public abstract class Explorador {
      */
     public void exibirStatus() {
         System.out.println("Explorador: " + nome);
-        System.out.println("Tipo: " + tipo);
+        System.out.println("Especialidade: " + especialidade);
+        System.out.println("Nivel: " + nivel);
         System.out.println("Prioridade: " + prioridade);
-        System.out.println("Tarefa: " + tarefa);
-        System.out.println("Status: Iniciando exploração...");
+        System.out.println("Tarefa: " + 
+                            tarefa.getDescricao() + " em " + 
+                            tarefa.getLocal() + " Dificuldade " +
+                            tarefa.getDificuldade());
+       
     }
 
     // Os getters permitem a leitura sem expor diretamente os atributos.
-    public String getNome() {
-        return nome;
-    }
+    public String getNome() {return nome;}
 
-    public String getTipo() {
-        return tipo;
-    }
+    public String getEspecialidade() {return especialidade;}
 
-    public int getPrioridade() {
-        return prioridade;
-    }
+    public int getNivel() {return nivel;}
 
-    public String getTarefa() {
-        return tarefa;
-    }
-}
+    public int getPrioridade() {return prioridade;}
+
+    // implementando getters do desafio aventureiro
+    public Tarefa getTarefa(){return tarefa;}
+
+    public Semaphore getSemaforo(){return semaforo;}
+}   
+    
+

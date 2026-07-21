@@ -1,90 +1,131 @@
 import java.util.ArrayList;
+import java.util.concurrent.Semaphore;
 
 /**
  * Classe principal responsável por cadastrar os exploradores e executar
  * suas tarefas paralelamente.
+ * Fluxo da aplicação como um todo :
+ * O main cria um semáforo com duas permissões;
+ * Os quatro exploradores começam praticamente juntos;
+ * Somente dois conseguem passar pelo acquire();
+ * Os demais ficam aguardando;
+ * Quando um explorador chama release(), outro pode começar;
+ * O main usa join() para aguardar todos;
+ * As threads terminam no estado TERMINATED.
  */
-public class CacaAoTesouroParalela {
+public class CacaAoTesouroParalela 
+{
 
-    public static void main(String[] args) {
+    public static void main(String[] args) 
+    {
         System.out.println("=== CAÇA AO TESOURO PARALELA ===");
+        System.out.println(" Nivel Aventureiro \n");
 
-        // A lista permite gerenciar todas as threads em um único lugar.
+        /**
+         * O mesmo semafor  sera compartilhado por todos os exploradores.
+         * As 2 permissoes limitam a execução a dois exploradores por vez.
+        */
+       Semaphore semaforo = new Semaphore(2);
+
+       //Criação das quatro tarefas imutaveis.
+       Tarefa tarefaCaverna = new Tarefa("Mapear caverna","Caverna do Eco",7);
+
+       Tarefa tarefaRuinas = new Tarefa("Explorar ruinas","Templo Antigo",6);
+
+       Tarefa tarefaFloresta = new Tarefa("Procurar pistas","Floresta Sombria",5);
+
+       Tarefa tarefaMontanha = new Tarefa("Recuperar Artefato","Montanha Perdida",9);
+
+       /*
+         * Todos os exploradores recebem exatamente a mesma instância
+         * do semáforo.
+         */
+        ExploradorRapido alice = new ExploradorRapido
+        ("Alice", 5, Thread.MAX_PRIORITY, tarefaCaverna, semaforo);
+
+         ExploradorRapido carlos = new ExploradorRapido
+        ("Carlos", 4, 8, tarefaRuinas, semaforo);
+
+        ExploradorCuidadoso bob = new ExploradorCuidadoso
+        ("Bob", 4, 5, tarefaFloresta, semaforo);
+
+        ExploradorCuidadoso diana = new ExploradorCuidadoso
+        ("Diana", 6, Thread.MAX_PRIORITY, tarefaMontanha, semaforo);
+
+        // Cada explorador Runnable é encapsulado em uma Thread.
+        Thread threadAlice = new Thread(alice, "Thread-Alice");
+        Thread threadCarlos = new Thread(carlos, "Thread-Carlos");
+        Thread threadBob = new Thread(bob, "Thread-Bob");
+        Thread threadDiana = new Thread(diana, "Thread-Diana");
+
+        /*
+         * A prioridade da Thread deve coincidir com a prioridade
+         * armazenada no explorador.
+         */
+        threadAlice.setPriority(alice.getPrioridade());
+        threadCarlos.setPriority(carlos.getPrioridade());
+        threadBob.setPriority(bob.getPrioridade());
+        threadDiana.setPriority(diana.getPrioridade());
+
+        //Diana vai ser uma tarefa secundaria
+        threadDiana.setDaemon(true);
+
+        //Lista usada para gerenciar todas as threads.
         ArrayList<Thread> threads = new ArrayList<>();
 
-        // São criados pelo menos dois exploradores de cada tipo.
-        ExploradorRapido alice = new ExploradorRapido("Alice", "Vasculhar a caverna");
-        ExploradorRapido davi = new ExploradorRapido("Davi", "Investigar as ruínas");
-        ExploradorCuidadoso bob = new ExploradorCuidadoso("Bob", "Mapear a floresta");
-
-        // A tarefa vazia demonstra o tratamento da exceção personalizada.
-        ExploradorCuidadoso clara = new ExploradorCuidadoso("Clara", "   ");
-
-        // Cada objeto Runnable é encapsulado em uma Thread.
-        Thread threadAlice = new Thread(alice, "Explorador-Alice");
-        Thread threadDavi = new Thread(davi, "Explorador-Davi");
-        Thread threadBob = new Thread(bob, "Explorador-Bob");
-        Thread threadClara = new Thread(clara, "Explorador-Clara");
-
-        // A prioridade deve ser configurada antes de iniciar a thread.
-        threadAlice.setPriority(Thread.MAX_PRIORITY);
-        threadDavi.setPriority(Thread.MAX_PRIORITY);
-        threadBob.setPriority(Thread.MIN_PRIORITY);
-        threadClara.setPriority(Thread.MIN_PRIORITY);
-
-        // A thread daemon representa uma tarefa secundária da aplicação.
-        // Clara permanece não daemon para garantir a exibição do erro da tarefa.
-        threadBob.setDaemon(true);
-
         threads.add(threadAlice);
-        threads.add(threadDavi);
+        threads.add(threadCarlos);
         threads.add(threadBob);
-        threads.add(threadClara);
+        threads.add(threadDiana);
 
-        System.out.println("\n=== THREADS ANTES DA EXECUÇÃO ===");
-        for (Thread thread : threads) {
-            exibirInformacoesDaThread(thread);
-        }
+        System.out.println("=== THREADS ANTES DO START ===");
 
-        System.out.println("\n=== INICIANDO EXPLORAÇÃO ===");
-        for (Thread thread : threads) {
-            // start() cria a execução paralela; run() direto seria sequencial.
+        //Inicia a execução paralela das tarefas
+        for(Thread thread : threads)
+        {
             thread.start();
         }
-
-        // Aguarda somente as threads principais (não daemon) terminarem.
-        for (Thread thread : threads) {
-            if (!thread.isDaemon()) {
-                try {
-                    thread.join();
-                } catch (InterruptedException e) {
-                    // Restaura o sinal de interrupção para não ocultar o evento.
-                    Thread.currentThread().interrupt();
-                    System.err.println("A thread principal foi interrompida.");
-                    return;
-                }
+        /*
+         * Aguarda a conclusão das threads.
+         * Mesmo sendo daemon, Diana também será aguardada para que sua
+         * execução possa ser analisada completamente neste exercício.
+         */
+        for (Thread thread : threads) 
+        {
+            try 
+            {
+                thread.join();
+            } 
+            catch (InterruptedException e) 
+            {
+                System.err.println("A thread principal foi interrompida.");
+                Thread.currentThread().interrupt();
+                return;
             }
         }
+        System.out.println("=== ESTADO FINAL DAS THREADS ===");
 
-        System.out.println("\n=== ESTADO FINAL DAS THREADS ===");
-        for (Thread thread : threads) {
-            exibirInformacoesDaThread(thread);
+        for(Thread thread : threads)
+        {
+            exibirInformacoes(thread);
         }
 
-        System.out.println("\n=== CAÇA AO TESOURO FINALIZADA ===");
-        System.out.println("Todos os exploradores principais concluíram suas missões.");
+        System.out.println("\n=== EXPLORAÇÃO FINALIZADA ===");
+        System.out.println("Todos os exploradores concluíram suas tarefas.");
     }
-
     /**
-     * Mostra prioridade, tipo e estado do ciclo de vida da thread.
+     * Exibe as principais informações de uma thread.
      */
-    private static void exibirInformacoesDaThread(Thread thread) {
-        System.out.printf(
-                "%s | prioridade: %d | daemon: %s | estado: %s%n",
-                thread.getName(),
-                thread.getPriority(),
-                thread.isDaemon(),
-                thread.getState()
+    private static void exibirInformacoes(Thread thread) 
+    {
+        System.out.println(
+                thread.getName()
+                        + " | Prioridade: "
+                        + thread.getPriority()
+                        + " | Daemon: "
+                        + thread.isDaemon()
+                        + " | Estado: "
+                        + thread.getState()
         );
     }
 }
